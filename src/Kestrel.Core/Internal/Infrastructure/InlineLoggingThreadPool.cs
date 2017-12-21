@@ -16,7 +16,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure
             _log = log;
         }
 
-        public void Run(Action action)
+        public override void Run(Action action)
         {
             try
             {
@@ -28,12 +28,12 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure
             }
         }
 
-        public void UnsafeRun(WaitCallback action, object state)
+        public override void UnsafeRun(WaitCallback action, object state)
         {
             action(state);
         }
 
-        public void Schedule(Action<object> action, object state)
+        public override void Schedule(Action<object> action, object state)
         {
             try
             {

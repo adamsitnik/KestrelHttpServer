@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Text;
@@ -214,7 +215,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http2
             }
         }
 
-        private bool ParsePreface(ReadableBuffer readableBuffer, out ReadCursor consumed, out ReadCursor examined)
+        private bool ParsePreface(ReadOnlyBuffer readableBuffer, out Position consumed, out Position examined)
         {
             consumed = readableBuffer.Start;
             examined = readableBuffer.End;

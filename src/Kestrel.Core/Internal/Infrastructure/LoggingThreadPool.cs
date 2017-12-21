@@ -40,17 +40,17 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure
             };
         }
 
-        public void Run(Action action)
+        public override void Run(Action action)
         {
             ThreadPool.QueueUserWorkItem(_runAction, action);
         }
 
-        public void UnsafeRun(WaitCallback action, object state)
+        public override void UnsafeRun(WaitCallback action, object state)
         {
             ThreadPool.QueueUserWorkItem(action, state);
         }
 
-        public void Schedule(Action<object> action, object state)
+        public override void Schedule(Action<object> action, object state)
         {
             Run(() => action(state));
         }

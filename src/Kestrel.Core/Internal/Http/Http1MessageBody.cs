@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Buffers;
 using System.IO;
 using System.IO.Pipelines;
 using System.Threading.Tasks;
@@ -149,7 +150,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             }
         }
 
-        protected void Copy(ReadableBuffer readableBuffer, WritableBuffer writableBuffer)
+        protected void Copy(ReadOnlyBuffer readableBuffer, WritableBuffer writableBuffer)
         {
             _context.TimeoutControl.BytesRead(readableBuffer.Length);
 
@@ -171,7 +172,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             _pumpTask = PumpAsync();
         }
 
-        protected virtual bool Read(ReadableBuffer readableBuffer, WritableBuffer writableBuffer, out ReadCursor consumed, out ReadCursor examined)
+        protected virtual bool Read(ReadOnlyBuffer readableBuffer, WritableBuffer writableBuffer, out Position consumed, out Position examined)
         {
             throw new NotImplementedException();
         }
@@ -296,7 +297,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 RequestUpgrade = true;
             }
 
-            protected override bool Read(ReadableBuffer readableBuffer, WritableBuffer writableBuffer, out ReadCursor consumed, out ReadCursor examined)
+            protected override bool Read(ReadOnlyBuffer readableBuffer, WritableBuffer writableBuffer, out Position consumed, out Position examined)
             {
                 Copy(readableBuffer, writableBuffer);
                 consumed = readableBuffer.End;
@@ -318,7 +319,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 _inputLength = _contentLength;
             }
 
-            protected override bool Read(ReadableBuffer readableBuffer, WritableBuffer writableBuffer, out ReadCursor consumed, out ReadCursor examined)
+            protected override bool Read(ReadOnlyBuffer readableBuffer, WritableBuffer writableBuffer, out Position consumed, out Position examined)
             {
                 if (_inputLength == 0)
                 {
@@ -366,10 +367,10 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 RequestKeepAlive = keepAlive;
             }
 
-            protected override bool Read(ReadableBuffer readableBuffer, WritableBuffer writableBuffer, out ReadCursor consumed, out ReadCursor examined)
+            protected override bool Read(ReadOnlyBuffer readableBuffer, WritableBuffer writableBuffer, out Position consumed, out Position examined)
             {
-                consumed = default(ReadCursor);
-                examined = default(ReadCursor);
+                consumed = default(Position);
+                examined = default(Position);
 
                 while (_mode < Mode.Trailer)
                 {
@@ -457,11 +458,11 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 }
             }
 
-            private void ParseChunkedPrefix(ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined)
+            private void ParseChunkedPrefix(ReadOnlyBuffer buffer, out Position consumed, out Position examined)
             {
                 consumed = buffer.Start;
                 examined = buffer.Start;
-                var reader = new ReadableBufferReader(buffer);
+                var reader = new ReadOnlyBufferReader(buffer);
                 var ch1 = reader.Take();
                 var ch2 = reader.Take();
 
@@ -513,7 +514,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 _context.ThrowRequestRejected(RequestRejectionReason.BadChunkSizeData);
             }
 
-            private void ParseExtension(ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined)
+            private void ParseExtension(ReadOnlyBuffer buffer, out Position consumed, out Position examined)
             {
                 // Chunk-extensions not currently parsed
                 // Just drain the data
@@ -522,7 +523,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
                 do
                 {
-                    ReadCursor extensionCursor;
+                    Position extensionCursor;
                     if (ReadCursorOperations.Seek(buffer.Start, buffer.End, out extensionCursor, ByteCR) == -1)
                     {
                         // End marker not found yet
@@ -565,7 +566,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 } while (_mode == Mode.Extension);
             }
 
-            private void ReadChunkedData(ReadableBuffer buffer, WritableBuffer writableBuffer, out ReadCursor consumed, out ReadCursor examined)
+            private void ReadChunkedData(ReadOnlyBuffer buffer, WritableBuffer writableBuffer, out Position consumed, out Position examined)
             {
                 var actual = Math.Min(buffer.Length, _inputLength);
                 consumed = buffer.Move(buffer.Start, actual);
@@ -582,7 +583,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 }
             }
 
-            private void ParseChunkedSuffix(ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined)
+            private void ParseChunkedSuffix(ReadOnlyBuffer buffer, out Position consumed, out Position examined)
             {
                 consumed = buffer.Start;
                 examined = buffer.Start;
@@ -608,7 +609,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
                 }
             }
 
-            private void ParseChunkedTrailer(ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined)
+            private void ParseChunkedTrailer(ReadOnlyBuffer buffer, out Position consumed, out Position examined)
             {
                 consumed = buffer.Start;
                 examined = buffer.Start;

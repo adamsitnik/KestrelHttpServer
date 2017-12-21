@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -31,7 +32,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
         private const byte ByteQuestionMark = (byte)'?';
         private const byte BytePercentage = (byte)'%';
 
-        public unsafe bool ParseRequestLine(TRequestHandler handler, ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined)
+        public unsafe bool ParseRequestLine(TRequestHandler handler, ReadOnlyBuffer buffer, out Position consumed, out Position examined)
         {
             consumed = buffer.Start;
             examined = buffer.End;
@@ -186,7 +187,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
             handler.OnStartLine(method, httpVersion, targetBuffer, pathBuffer, query, customMethod, pathEncoded);
         }
 
-        public unsafe bool ParseHeaders(TRequestHandler handler, ReadableBuffer buffer, out ReadCursor consumed, out ReadCursor examined, out int consumedBytes)
+        public unsafe bool ParseHeaders(TRequestHandler handler, ReadOnlyBuffer buffer, out Position consumed, out Position examined, out int consumedBytes)
         {
             consumed = buffer.Start;
             examined = buffer.End;
@@ -194,8 +195,8 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
 
             var bufferEnd = buffer.End;
 
-            var reader = new ReadableBufferReader(buffer);
-            var start = default(ReadableBufferReader);
+            var reader = new ReadOnlyBufferReader(buffer);
+            var start = default(ReadOnlyBufferReader);
             var done = false;
 
             try
@@ -412,7 +413,7 @@ namespace Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool TryGetNewLine(ref ReadableBuffer buffer, out ReadCursor found)
+        private static bool TryGetNewLine(ref ReadOnlyBuffer buffer, out Position found)
         {
             var start = buffer.Start;
             if (ReadCursorOperations.Seek(start, buffer.End, out found, ByteLF) != -1)
