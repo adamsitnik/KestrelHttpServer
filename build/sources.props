@@ -9,7 +9,7 @@
       https://dotnet.myget.org/F/aspnetcore-tools/api/v3/index.json;
       https://dotnet.myget.org/F/roslyn/api/v3/index.json;
       https://dotnet.myget.org/F/dotnet-core/api/v3/index.json;
-      d:\LocalNuget
+      https://dotnet.myget.org/f/dotnet-corefxlab/api/v3/index.json;
     </RestoreSources>
     <RestoreSources Condition="'$(DotNetBuildOffline)' != 'true'">
       $(RestoreSources);
